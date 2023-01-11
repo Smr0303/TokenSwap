@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Smr0303/TokenSwap/issues"
   },
-  "homepage": "https://github.com/Smr0303/TokenSwap#readme"
+  "homepage": "https://github.com/Smr0303/TokenSwap#readme",
+  "dependencies": {
+    "qs": "^6.11.0"
+  }
 }
