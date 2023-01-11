@@ -19,6 +19,7 @@
   "homepage": "https://github.com/Smr0303/TokenSwap#readme",
   "dependencies": {
     "bignumber.js": "^9.1.1",
-    "qs": "^6.11.0"
+    "qs": "^6.11.0",
+    "web3": "^1.8.1"
   }
 }
