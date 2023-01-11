@@ -1,78 +1,75 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.bundle = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-
 const qs = require('qs');
 
 let currentTrade = {};
 let currentSelectSide;
 let tokens;
 
-async function init(){
-  await listAvailableTokens();
+async function init() {
+    await listAvailableTokens();
 }
 
 async function listAvailableTokens(){
-  console.log("initializing");
-  let response = await fetch('https://tokens.coingecko.com/uniswap/all.json');
-  let tokenListJSON = await response.json();
-  console.log("listing available tokens");
-  console.log(tokenListJSON);
-  tokens = tokenListJSON.tokens
-  console.log("tokens:", tokens);
+    console.log("initializing");
+    let response = await fetch('https://tokens.coingecko.com/uniswap/all.json');
+    let tokenListJSON = await response.json();
+    console.log("listing available tokens: ", tokenListJSON);
+    tokens = tokenListJSON.tokens;
+    console.log("tokens: ", tokens);
 
-  // create token list for modal
-  let parent = document.getElementById("token_list");
-  for (const i in tokens){
-    // token row in the modal token list
-    let div = document.createElement("div");
-    div.className = "token_row";
-    let html = `
-    <img class="token_list_img" src="${tokens[i].logoURI}">
-      <span class="token_list_text">${tokens[i].symbol}</span>
-      `;
-    div.innerHTML = html;
-    div.onclick = () => {
-      selectToken(tokens[i]);
+    // Create token list for modal
+    let parent = document.getElementById("token_list");
+    for (const i in tokens){
+        // Token row in the modal token list
+        let div = document.createElement("div");
+        div.className = "token_row";
+        let html = `
+        <img class="token_list_img" src="${tokens[i].logoURI}">
+          <span class="token_list_text">${tokens[i].symbol}</span>
+          `;
+        div.innerHTML = html;
+        div.onclick = () => {
+            selectToken(tokens[i]);
+        };
+        parent.appendChild(div);
     };
-    parent.appendChild(div);
-  }
 }
 
-function selectToken(token) {
-  closeModal();
-  currentTrade[currentSelectSide] = token;
-  console.log("currentTrade:" , currentTrade);
-  renderInterface();
+async function selectToken(token){
+    closeModal();
+    currentTrade[currentSelectSide] = token;
+    console.log("currentTrade: ", currentTrade);
+    renderInterface();
 }
 
 function renderInterface(){
-  if (currentTrade.from) {
-    console.log(currentTrade.from)
-    document.getElementById("from_token_img").src = currentTrade.from.logoURI;
-    document.getElementById("from_token_text").innerHTML = currentTrade.from.symbol;
-  }
-  if (currentTrade.to) {
-    document.getElementById("to_token_img").src = currentTrade.to.logoURI;
-    document.getElementById("to_token_text").innerHTML = currentTrade.to.symbol;
-  }
-
+    if (currentTrade.from){
+        console.log(currentTrade.from)
+        document.getElementById("from_token_img").src = currentTrade.from.logoURI;
+        document.getElementById("from_token_text").innerHTML = currentTrade.from.symbol;
+    }
+    if (currentTrade.to){
+        console.log(currentTrade.to)
+        document.getElementById("to_token_img").src = currentTrade.to.logoURI;
+        document.getElementById("to_token_text").innerHTML = currentTrade.to.symbol;
+    }
 }
 
 async function connect() {
     if (typeof window.ethereum !== "undefined") {
         try {
-          console.log("connecting");
-          await ethereum.request({ method: "eth_requestAccounts" });
+            console.log("connecting");
+            await ethereum.request({ method: "eth_requestAccounts" });
         } catch (error) {
-          console.log(error);
+            console.log(error);
         }
         document.getElementById("login_button").innerHTML = "Connected";
         // const accounts = await ethereum.request({ method: "eth_accounts" });
         document.getElementById("swap_button").disabled = false;
-      } else {
-        document.getElementById("login_button").innerHTML =
-          "Please install MetaMask";
-      }
+    } else {
+        document.getElementById("login_button").innerHTML = "Please install MetaMask";
     }
+}
 
 function openModal(side){
     currentSelectSide = side;
@@ -80,47 +77,74 @@ function openModal(side){
 }
 
 function closeModal(){
-  document.getElementById("token_modal").style.display = "none";
+    document.getElementById("token_modal").style.display = "none";
 }
 
 async function getPrice(){
-  console.log("Getting Price");
-
-  if (!currentTrade.from || !currentTrade.to || !document.getElementById("from_amount").value) return;
-  let amount = Number(document.getElementById("from_amount").value * 10 ** currentTrade.from.decimals);
-
-  const params = {
-    sellToken: currentTrade.from.address,
-    buyToken: currentTrade.to.address,
-    sellAmount: amount,
-  }
-
-  // Fetch the swap price.
-  const response = await fetch(
-    `https://api.0x.org/swap/v1/price?${qs.stringify(params)}`
-    );
+    console.log("Getting Price");
   
-  swapPriceJSON = await response.json();
-  console.log("Price: ", swapPriceJSON);
+    if (!currentTrade.from || !currentTrade.to || !document.getElementById("from_amount").value) return;
+    let amount = Number(document.getElementById("from_amount").value * 10 ** currentTrade.from.decimals);
   
-  document.getElementById("to_amount").value = swapPriceJSON.buyAmount / (10 ** currentTrade.to.decimals);
-  document.getElementById("gas_estimate").innerHTML = swapPriceJSON.estimatedGas;
+    const params = {
+        sellToken: currentTrade.from.address,
+        buyToken: currentTrade.to.address,
+        sellAmount: amount,
+    }
+  
+    // Fetch the swap price.
+    const response = await fetch(`https://api.0x.org/swap/v1/price?${qs.stringify(params)}`);
+    
+    swapPriceJSON = await response.json();
+    console.log("Price: ", swapPriceJSON);
+    
+    document.getElementById("to_amount").value = swapPriceJSON.buyAmount / (10 ** currentTrade.to.decimals);
+    document.getElementById("gas_estimate").innerHTML = swapPriceJSON.estimatedGas;
+}
+
+async function getQuote(account){
+    console.log("Getting Quote");
+  
+    if (!currentTrade.from || !currentTrade.to || !document.getElementById("from_amount").value) return;
+    let amount = Number(document.getElementById("from_amount").value * 10 ** currentTrade.from.decimals);
+  
+    const params = {
+        sellToken: currentTrade.from.address,
+        buyToken: currentTrade.to.address,
+        sellAmount: amount,
+        takerAddress: account,
+    }
+  
+    // Fetch the swap quote.
+    const response = await fetch(`https://api.0x.org/swap/v1/quote?${qs.stringify(params)}`);
+    
+    swapQuoteJSON = await response.json();
+    console.log("Quote: ", swapQuoteJSON);
+    
+    document.getElementById("to_amount").value = swapQuoteJSON.buyAmount / (10 ** currentTrade.to.decimals);
+    document.getElementById("gas_estimate").innerHTML = swapQuoteJSON.estimatedGas;
+  
+    return swapQuoteJSON;
+}
+
+async function trySwap(){
+  let accounts = window.ethereum.request({method:"eth_accounts"});
+  let takerAddress = accounts[0];
+   
+  const swapQuoteJSON=await getQuote(takerAddress);
 }
 
 init();
 
 document.getElementById("login_button").onclick = connect;
 document.getElementById("from_token_select").onclick = () => {
-  openModal("from");
+    openModal("from");
 };
 document.getElementById("to_token_select").onclick = () => {
-  openModal("to");
+    openModal("to");
 };
 document.getElementById("modal_close").onclick = closeModal;
 document.getElementById("from_amount").onblur = getPrice;
-
-
-
 },{"qs":12}],2:[function(require,module,exports){
 'use strict';
 
